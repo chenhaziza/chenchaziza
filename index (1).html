@@ -1,0 +1,448 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חנות בגדים אונליין - BE YOU</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            direction: rtl;
+            background-color: #f9f9f9;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, #1a1a1a, #6b7280);
+            color: white;
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #f472b6;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            background: url('https://images.unsplash.com/photo-1558769132-cb6d136a61d6') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            margin-top: 70px;
+        }
+
+        .hero-content {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2.5rem;
+            border-radius: 12px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            background-color: #f472b6;
+            color: white;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #db2777;
+            transform: scale(1.05);
+        }
+
+        /* Products Section */
+        .products {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 2rem;
+        }
+
+        .products h2 {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 2.5rem;
+            color: #1a1a1a;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .product-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.7rem;
+            color: #1a1a1a;
+        }
+
+        .product-info p {
+            color: #4b5563;
+            margin-bottom: 1.2rem;
+            font-size: 1rem;
+        }
+
+        /* Dashboard Section */
+        .dashboards {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 2rem;
+        }
+
+        .dashboards h2 {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 2.5rem;
+            color: #1a1a1a;
+        }
+
+        .dashboard-container {
+            margin-bottom: 2rem;
+        }
+
+        .tableauPlaceholder {
+            position: relative;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .tableauViz {
+            width: 100%;
+        }
+
+        /* Footer */
+        footer {
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        footer p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .social-links a {
+            color: white;
+            margin: 0 0.7rem;
+            text-decoration: none;
+            font-size: 1.3rem;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #f472b6;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .nav-links a {
+                font-size: 0.95rem;
+                margin-left: 1rem;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tableauPlaceholder {
+                height: 727px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">BE YOU</div>
+            <div class="nav-links">
+                <a href="#home">בית</a>
+                <a href="#products">קולקציה</a>
+                <a href="#dashboards">דשבורדים</a>
+                <a href="#about">אודות</a>
+                <a href="#contact">צור קשר</a>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>BE YOU - הסטייל שלך</h1>
+            <p>מצאי את הבגדים שמבטאים את האישיות שלך</p>
+            <button class="cta-button" onclick="scrollToProducts()">גלי את הקולקציה</button>
+        </div>
+    </section>
+
+    <section class="products" id="products">
+        <h2>הקולקציה שלנו</h2>
+        <div class="product-grid" id="productGrid">
+            <!-- Products will be added dynamically -->
+        </div>
+    </section>
+
+    <section class="dashboards" id="dashboards">
+        <h2>ניתוח נתוני המכירות שלנו</h2>
+        <div class="dashboard-container">
+            <div class='tableauPlaceholder' id='viz1751112753258' style='position: relative'>
+                <noscript><a href='#'><img alt='דשבורד 3 ' src='https://public.tableau.com/static/images/wo/workfinish3/3/1_rss.png' style='border: none' /></a></noscript>
+                <object class='tableauViz' style='display:none;'>
+                    <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                    <param name='embed_code_version' value='3' />
+                    <param name='site_root' value='' />
+                    <param name='name' value='workfinish3/3' />
+                    <param name='tabs' value='no' />
+                    <param name='toolbar' value='yes' />
+                    <param name='static_image' value='https://public.tableau.com/static/images/wo/workfinish3/3/1.png' />
+                    <param name='animate_transition' value='yes' />
+                    <param name='display_static_image' value='yes' />
+                    <param name='display_spinner' value='yes' />
+                    <param name='display_overlay' value='yes' />
+                    <param name='display_count' value='yes' />
+                    <param name='language' value='en-US' />
+                </object>
+            </div>
+            <script type='text/javascript'>
+                var divElement = document.getElementById('viz1751112753258');
+                var vizElement = divElement.getElementsByTagName('object')[0];
+                if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else { vizElement.style.width='100%';vizElement.style.height='727px';}
+                var scriptElement = document.createElement('script');
+                scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+                vizElement.parentNode.insertBefore(scriptElement, vizElement);
+            </script>
+        </div>
+
+        <div class="dashboard-container">
+            <div class='tableauPlaceholder' id='viz1751113079717' style='position: relative'>
+                <noscript><a href='#'><img alt='דשבורד 2 ' src='https://public.tableau.com/static/images/wo/workfinish2/2/1_rss.png' style='border: none' /></a></noscript>
+                <object class='tableauViz' style='display:none;'>
+                    <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                    <param name='embed_code_version' value='3' />
+                    <param name='site_root' value='' />
+                    <param name='name' value='workfinish2/2' />
+                    <param name='tabs' value='no' />
+                    <param name='toolbar' value='yes' />
+                    <param name='static_image' value='https://public.tableau.com/static/images/wo/workfinish2/2/1.png' />
+                    <param name='animate_transition' value='yes' />
+                    <param name='display_static_image' value='yes' />
+                    <param name='display_spinner' value='yes' />
+                    <param name='display_overlay' value='yes' />
+                    <param name='display_count' value='yes' />
+                    <param name='language' value='en-US' />
+                </object>
+            </div>
+            <script type='text/javascript'>
+                var divElement = document.getElementById('viz1751113079717');
+                var vizElement = divElement.getElementsByTagName('object')[0];
+                if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else { vizElement.style.width='100%';vizElement.style.height='727px';}
+                var scriptElement = document.createElement('script');
+                scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+                vizElement.parentNode.insertBefore(scriptElement, vizElement);
+            </script>
+        </div>
+
+        <div class="dashboard-container">
+            <div class='tableauPlaceholder' id='viz1751113087230' style='position: relative'>
+                <noscript><a href='#'><img alt='דשבורד 1 ' src='https://public.tableau.com/static/images/wo/workfinish1/1/1_rss.png' style='border: none' /></a></noscript>
+                <object class='tableauViz' style='display:none;'>
+                    <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                    <param name='embed_code_version' value='3' />
+                    <param name='site_root' value='' />
+                    <param name='name' value='workfinish1/1' />
+                    <param name='tabs' value='no' />
+                    <param name='toolbar' value='yes' />
+                    <param name='static_image' value='https://public.tableau.com/static/images/wo/workfinish1/1/1.png' />
+                    <param name='animate_transition' value='yes' />
+                    <param name='display_static_image' value='yes' />
+                    <param name='display_spinner' value='yes' />
+                    <param name='display_overlay' value='yes' />
+                    <param name='display_count' value='yes' />
+                    <param name='language' value='en-US' />
+                </object>
+            </div>
+            <script type='text/javascript'>
+                var divElement = document.getElementById('viz1751113087230');
+                var vizElement = divElement.getElementsByTagName('object')[0];
+                if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight=(divElement.offsetWidth*0.75)+'px';} 
+                else { vizElement.style.width='100%';vizElement.style.height='727px';}
+                var scriptElement = document.createElement('script');
+                scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+                vizElement.parentNode.insertBefore(scriptElement, vizElement);
+            </script>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <p>צור קשר: contact@beyou.co.il | 03-9876543</p>
+        <div class="social-links">
+            <a href="#">פייסבוק</a>
+            <a href="#">אינסטגרם</a>
+            <a href="#">פינטרסט</a>
+        </div>
+    </footer>
+
+    <script>
+        // Sample product data
+        const products = [
+            { name: "שמלת ערב אלגנטית", price: "₪299", image: "https://images.unsplash.com/photo-1566174053879-31528523f8ae" },
+            { name: "חולצת קז'ואל", price: "₪149", image: "https://images.unsplash.com/photo-1583743814966-8936f970b74b" },
+            { name: "מעיל חורף", price: "₪499", image: "https://images.unsplash.com/photo-1515434327609-5f28e0e3609b" },
+            { name: "מכנסי ג'ינס", price: "₪229", image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246" }
+        ];
+
+        // Function to render products
+        function renderProducts() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = '';
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <p>${product.price}</p>
+                        <button class="cta-button">הוסף לעגלה</button>
+                    </div>
+                `;
+                productGrid.appendChild(productCard);
+            });
+        }
+
+        // Function to scroll to products section
+        function scrollToProducts() {
+            document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize products on page load
+        window.onload = renderProducts;
+    </script>
+</body>
+</html>
